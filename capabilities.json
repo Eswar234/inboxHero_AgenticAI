@@ -1,0 +1,104 @@
+{
+  "student": "Student Name, ROLL NUMBER",
+  "repo": "https://github.com/student/inboxhero",
+  "system": {
+    "framework": "none",
+    "model": "gemini-1.5-flash for complex classification and drafting; local deterministic safety parser for injection/threat detection",
+    "messages_processed": 54,
+    "rule_handled": 35,
+    "dispositions": [
+      "reply",
+      "archive",
+      "defer",
+      "delegate",
+      "escalate"
+    ],
+    "retrieval": "thread-walk",
+    "irreversible": [
+      "send",
+      "delete"
+    ],
+    "reversible": [
+      "draft",
+      "label",
+      "archive",
+      "defer"
+    ],
+    "gate": "both",
+    "preference_demo": "m015: always CC Priya on Hartwell & Cho legal mail"
+  },
+  "capabilities": [
+    {
+      "id": "R1",
+      "name": "Zero the inbox",
+      "tier": "B",
+      "claim": "Assigns every message exactly one disposition (reply/archive/defer/delegate/escalate) with a stated reason, leaving none undecided.",
+      "command": "python demo.py --cap R1",
+      "observable": "Prints a table of all 54 messages, each with a disposition and reason, then 'undecided: 0'. Also writes decisions.json.",
+      "evidence": "trace.jsonl, events tagged cap=R1"
+    },
+    {
+      "id": "R2",
+      "name": "Grounded reply",
+      "tier": "B",
+      "claim": "Drafts a reply grounded in a specific earlier message and records cited message IDs.",
+      "command": "python demo.py --cap R2 --msg m008",
+      "observable": "Prints a draft answering m008 that contains the staging AMQP URL from m003, plus 'cited: [m003]'.",
+      "evidence": "trace.jsonl, events tagged cap=R2"
+    },
+    {
+      "id": "R3",
+      "name": "Gate the irreversible",
+      "tier": "C",
+      "claim": "Never sends or deletes without human approval or an explicit --dry-run that suppresses outbox writes.",
+      "command": "python demo.py --cap R3 --dry-run",
+      "observable": "Prints proposed send action, followed by 'outbox/ writes: 0'. Re-running without --dry-run prompts y/n before writing to outbox/.",
+      "evidence": "trace.jsonl, events tagged cap=R3"
+    },
+    {
+      "id": "R4",
+      "name": "Persistent preference",
+      "tier": "C",
+      "claim": "Records a stated preference from mail and applies it across process restarts.",
+      "command": "python demo.py --cap R4",
+      "observable": "Stores preference from m015 into prefs.json. Next process handles legal mail m018 and automatically loops priya@paperjet.io into CC.",
+      "evidence": "prefs.json on disk; trace.jsonl events tagged cap=R4"
+    },
+    {
+      "id": "R5",
+      "name": "Refuse embedded instructions",
+      "tier": "C",
+      "claim": "Detects hostile instructions inside message bodies, suppresses them, logs refusals, and alerts the user without deleting them.",
+      "command": "python demo.py --cap R5",
+      "observable": "Detects injections in m017, m024, m039, m047; suppresses exfiltration and writes 'FLAGGED' refusals to console and trace.",
+      "evidence": "trace.jsonl, events tagged cap=R5"
+    },
+    {
+      "id": "R6",
+      "name": "Dashboard",
+      "tier": "C",
+      "claim": "Generates a three-pane view (pending actions, flagged threats, commitments with conflicts surfaced) reproducible from a run.",
+      "command": "python demo.py --cap R6",
+      "observable": "Generates dashboard.html and dashboard.json. Surfaces conflict between m010 (VC call) and m061 (Dentist) at Tue 15:00, and cites m038+m040 for board deck.",
+      "evidence": "dashboard.html, dashboard.json; trace.jsonl events tagged cap=R6"
+    },
+    {
+      "id": "X1",
+      "name": "Follow-up tracking",
+      "tier": "B",
+      "claim": "Finds sent messages awaiting reply for over 3 days and generates follow-up nudges.",
+      "command": "python demo.py --cap X1",
+      "observable": "Outputs JSON identifying m044 (sent to Priya 6 days ago with no reply) with a prepared chase draft.",
+      "evidence": "trace.jsonl, events tagged cap=X1"
+    },
+    {
+      "id": "X2",
+      "name": "Morning digest",
+      "tier": "A",
+      "claim": "Produces a single-screen executive briefing of priorities, deferred obligations, and rule-archived noise.",
+      "command": "python demo.py --cap X2",
+      "observable": "Prints a 3-part digest showing actionable items (m018, m010), waitlisted deliverables (m040), and 28 auto-archived items.",
+      "evidence": "trace.jsonl, events tagged cap=X2"
+    }
+  ]
+}
